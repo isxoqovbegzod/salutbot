@@ -6,7 +6,7 @@ from telebot import custom_filters
 from bots.user_state import UserState, gen_markup, basket_product
 from django.core.management.base import BaseCommand
 from bots.views import models_method
-from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryDetail, User
+from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryDetail, User, TempBask, Basket
 from bots.views import choice_sub_categoty
 
 # Объявление переменной бота
@@ -71,16 +71,16 @@ def sub_category(message):
     print(message.text, 'test')
     try:
         if message.text == '⬅️ orqga':
-            
             return user_name(message)
 
         markup = ReplyKeyboardMarkup(True, row_width=2)
 
-        models = ProductSubCategory.objects.filter(product_categoty__category_name=message.text).values('product_sub_cat', 'category_image')
+        models = ProductSubCategory.objects.filter(product_categoty__category_name=message.text).values(
+            'product_sub_cat', 'category_image')
 
         print(models, "++++!11")
 
-        result= []
+        result = []
         image = []
         print(result)
         res = []
@@ -88,7 +88,8 @@ def sub_category(message):
             for btn in models:
                 if not image:
                     image.append(btn['category_image'])
-                olma = ProductSubCategoryDetail.objects.filter(id=btn['product_sub_cat']).values('sub_categoty_name').get()
+                olma = ProductSubCategoryDetail.objects.filter(id=btn['product_sub_cat']).values(
+                    'sub_categoty_name').get()
                 print(olma, 'olma')
                 result.append(olma['sub_categoty_name'])
             print(result)
@@ -96,10 +97,9 @@ def sub_category(message):
             photo = open(*image, 'rb')
         else:
             return user_name(message)
-            print('dsadadadsdsdsdaasasa')
 
         rkm = markup.add(*result, '⬅️ orqga', '📥 Savat')
-      
+
         bot.set_state(message.from_user.id, UserState.sub_category_detail, message.chat.id)
         bot.send_photo(message.from_user.id, photo, reply_markup=rkm)
         photo.close()
@@ -117,7 +117,7 @@ def sub_category_detail(message):
             message.text = 'hello'
             return sub_category(message)
         if message.text == '📥 Savat':
-            print('sub_category_detail()  -> savat' )
+            print('sub_category_detail()  -> savat')
             bot.send_message(message.chat.id, 'savat detail')
 
         markup = ReplyKeyboardMarkup(True, row_width=2)
@@ -131,7 +131,7 @@ def sub_category_detail(message):
             for i in models:
                 res.append(i)
             data = f"Nomi: {res[0]['sub_categoty_name']} \n{res[0]['deskripsiyon']}" \
-                f"\nNarxi: {res[0]['product_price']}"
+                   f"\nNarxi: {res[0]['product_price']}"
             sa = res[0]['sub_category_image']
             photo = open(sa, 'rb')
         else:
@@ -150,17 +150,79 @@ def sub_category_detail(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     if call.data == 'add':
-        user = User.objects.filter(chat_id=call.from_user.id).values('id', 'qty').get()
-        user['qty'] = int(user['qty']) + 1
-        sa = User(id=user['id'], chat_id=call.from_user.id, qty=user['qty'])
-        sa.save()
-        gen_markup(call)
-        print('!!!!!!!!!!!')
-        bot.answer_callback_query(call.id, f"{user['qty']} ta")
-       
-        print('call.fro')
+        a = call.message.caption
+        ds = ''
+        for i in a:
+            ds += '1'
+            if i == '\n':
+                break
+        res = len(ds) - 2
+        olma = a[6:res]
+        user = ProductSubCategoryDetail.objects.filter(sub_categoty_name=olma).values('sub_categoty_name',
+                                                                                      'product_qty',
+                                                                                      'product_price').get()
+        print(user)
+        user_tempbask = TempBask(chat_id=call.from_user.id, product_name=user['sub_categoty_name'],
+                                 product_price=user['product_price'], qty=user['product_qty'])
+
+        user_tempbask.save()
+        bot.answer_callback_query(call.id, f"{1} ta")
+    elif call.data == '📥 Savatga qo\'shish':
+        basket(call)
+        bot.answer_callback_query(call.id, "Qo'shildi ")
 
 
+
+
+@bot.message_handler(commands=['📥 Savatga qo\'shish'])
+def basket(message):
+    user_product_data = TempBask.objects.filter(chat_id=message.from_user.id).values('product_name',
+                                                                                     'product_price', 'qty')
+
+    # res = int(user_product_data['product_price']) * len(user_product_data['qty'])
+    # print(res)
+    res = []
+    for i in user_product_data:
+        res.append(i)
+
+    len_qty = len(res) - 1
+    price_product_sum = float(res[0]['product_price']) * len_qty
+    user_basc = Basket(chat_id=message.from_user.id, product_name=res[0]['product_name'],
+                       product_price=price_product_sum, qty=len_qty)
+    user_basc.save()
+
+    #     txt += f'🔹<b>{i["product"]}</b>\n' \
+    #            f'{i["count"]} x {i["price"]} = {int(i["price"]) * int(i["count"]):,} \n\n'
+    #     x += i["price"] * int(i["count"])
+    #     txt_rus += f'🔹<b>{i["product"]}</b>\n' \
+    #                f'{i["count"]} x {i["price"]} = {int(i["price"]) * int(i["count"]):,} \n\n'
+    # txt += f'<b>Umumiy:</b> {x:,} sum'.replace(',', ' ')
+    # txt_rus += f'<b>Общий:</b> {x:,} sum'.replace(',', ' ')
+
+    # print(call.message.json['message_id'])
+    # pass
+    # a = call.message.caption
+    # ds = ''
+    # for i in a:
+    #     ds += '1'
+    #     if i == '\n':
+    #         break
+    # res = len(ds) - 1
+    # olma = a[6:res]
+    # print(olma)
+
+    # user = User.objects.filter(chat_id=call.from_user.id).values('id', 'qty').get()
+    # user['qty'] = {'data': 1}
+    #
+    # print(user)
+    # sa = User(id=user['id'], chat_id=call.from_user.id, qty=user['qty'])
+    # sa.save()
+    # gen_markup(call)
+
+
+@bot.message_handler(commands=['📥 Savatga'])
+def basket_detail(message):
+    pass
 
 
 bot.add_custom_filter(custom_filters.StateFilter(bot))
