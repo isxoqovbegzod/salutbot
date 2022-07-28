@@ -10,7 +10,7 @@ from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryD
 from bots.views import choice_sub_categoty
 
 # Объявление переменной бота
-bot = TeleBot(token='5369814485:AAFXt0RAqq7ixRgMxW5CIW3hKNlWiM9ZNWo', threaded=False)
+bot = TeleBot(token='5295753057:AAGVOAPzjyxlOcqFrj45CpWmY4aMfGndsbs', threaded=False)
 
 
 # Название класса обязательно - "Command"

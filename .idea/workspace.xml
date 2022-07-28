@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d3b39949-8b7b-4a99-9f31-e839b4d45cf9" name="Changes" comment="" />
+    <list default="true" id="d3b39949-8b7b-4a99-9f31-e839b4d45cf9" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bots/management/commands/bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/bots/management/commands/bot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/db.sqlite3" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -112,7 +116,7 @@
       <workItem from="1658740095454" duration="9284000" />
       <workItem from="1658751641672" duration="23200000" />
       <workItem from="1658984266936" duration="20228000" />
-      <workItem from="1659009039200" duration="2772000" />
+      <workItem from="1659009039200" duration="3744000" />
     </task>
     <servers />
   </component>
