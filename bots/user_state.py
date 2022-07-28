@@ -40,5 +40,7 @@ def gen_markup(message=None):
         return markup
 
 
+
+
 def basket_product(message):
     pass

@@ -42,8 +42,7 @@ def user_name(message):
     user_id = message.from_user.id
     try:
         if message.text == '📥 Savat':
-            basket_product(message)
-            bot.send_message(message.from_user.id, 'olma 📥 Savat')
+            basket_detail(message)
         user = User.objects.filter(chat_id=user_id).exists()
         if not user:
             User.objects.create(chat_id=user_id, username=message.text)
@@ -72,7 +71,9 @@ def sub_category(message):
     try:
         if message.text == '⬅️ orqga':
             return user_name(message)
-
+        elif message.text == '📥 Savat':
+            print("sasassssssssssssssssssss----------------->>>>>>>>>>>>>>>>")
+            return basket_detail(message)
         markup = ReplyKeyboardMarkup(True, row_width=2)
 
         models = ProductSubCategory.objects.filter(product_categoty__category_name=message.text).values(
@@ -117,8 +118,7 @@ def sub_category_detail(message):
             message.text = 'hello'
             return sub_category(message)
         if message.text == '📥 Savat':
-            print('sub_category_detail()  -> savat')
-            bot.send_message(message.chat.id, 'savat detail')
+            basket_detail(message)
 
         markup = ReplyKeyboardMarkup(True, row_width=2)
         models = ProductSubCategoryDetail.objects.filter(sub_categoty_name=message.text).values('sub_categoty_name',
@@ -149,7 +149,32 @@ def sub_category_detail(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    if call.data == 'add':
+    try:
+        if call.data == 'add':
+            a = call.message.caption
+            ds = ''
+            for i in a:
+                ds += '1'
+                if i == '\n':
+                    break
+            res = len(ds) - 2
+            olma = a[6:res]
+            print(olma)
+            user = ProductSubCategoryDetail.objects.filter(sub_categoty_name=olma).values('sub_categoty_name',
+                                                                                          'product_qty',
+                                                                                          'product_price').get()
+            print(user)
+            user_tempbask = TempBask(chat_id=call.from_user.id, product_name=user['sub_categoty_name'],
+                                     product_price=user['product_price'], qty=user['product_qty'])
+
+            user_tempbask.save()
+            bot.answer_callback_query(call.id, f"{1} ta")
+        elif call.data == '📥 Savatga qo\'shish':
+            basket(call)
+            bot.answer_callback_query(call.id, "Qo'shildi ")
+            TempBask.objects.filter(chat_id=call.from_user.id).delete()
+    except:
+        print('call   hatolik')
         a = call.message.caption
         ds = ''
         for i in a:
@@ -158,6 +183,7 @@ def callback_query(call):
                 break
         res = len(ds) - 2
         olma = a[6:res]
+        print(olma)
         user = ProductSubCategoryDetail.objects.filter(sub_categoty_name=olma).values('sub_categoty_name',
                                                                                       'product_qty',
                                                                                       'product_price').get()
@@ -167,30 +193,29 @@ def callback_query(call):
 
         user_tempbask.save()
         bot.answer_callback_query(call.id, f"{1} ta")
-    elif call.data == '📥 Savatga qo\'shish':
-        basket(call)
-        bot.answer_callback_query(call.id, "Qo'shildi ")
-
-
-
+        print('call   hatolik')
 
 @bot.message_handler(commands=['📥 Savatga qo\'shish'])
 def basket(message):
-    user_product_data = TempBask.objects.filter(chat_id=message.from_user.id).values('product_name',
-                                                                                     'product_price', 'qty')
+    try:
+        user_product_data = TempBask.objects.filter(chat_id=message.from_user.id).values('product_name',
+                                                                                         'product_price', 'qty')
 
-    # res = int(user_product_data['product_price']) * len(user_product_data['qty'])
-    # print(res)
-    res = []
-    for i in user_product_data:
-        res.append(i)
+        # res = int(user_product_data['product_price']) * len(user_product_data['qty'])
+        # print(res)
+        res = []
+        for i in user_product_data:
+            res.append(i)
 
-    len_qty = len(res) - 1
-    price_product_sum = float(res[0]['product_price']) * len_qty
-    user_basc = Basket(chat_id=message.from_user.id, product_name=res[0]['product_name'],
-                       product_price=price_product_sum, qty=len_qty)
-    user_basc.save()
-
+        len_qty = len(res)
+        print(len_qty, 'basket len_qty')
+        price_product_sum = float(res[0]['product_price']) * len_qty
+        user_basc = Basket(chat_id=message.from_user.id, product_name=res[0]['product_name'],
+                           product_price=price_product_sum, qty=len_qty)
+        user_basc.save()
+        print(res, 'resresrsersersres')
+    except:
+        print('📥 Savatga qo\'shish hatolik')
     #     txt += f'🔹<b>{i["product"]}</b>\n' \
     #            f'{i["count"]} x {i["price"]} = {int(i["price"]) * int(i["count"]):,} \n\n'
     #     x += i["price"] * int(i["count"])
@@ -220,10 +245,21 @@ def basket(message):
     # gen_markup(call)
 
 
-@bot.message_handler(commands=['📥 Savatga'])
+@bot.message_handler(commands=['📥 Savat'])
 def basket_detail(message):
-    pass
+    try:
+        basket_produnct = Basket.objects.filter(chat_id=message.from_user.id).values('qty', 'product_price',
+                                                                                     'product_name')
+        print(basket_produnct, '=======')
+        price = 0
+        text = 'Savatda: '
+        for i in basket_produnct:
+            text += f" \n🔹✖️Mahsulot nomi: {i['product_name']}\n🔹✖️Price: {i['product_price']}\n🔹✖️Soni: {i['qty']}\n\n"
+            price += float(i['product_price'])
 
+        bot.send_message(message.from_user.id, text)
+    except:
+        print('hatioliv basket_detail')
 
 bot.add_custom_filter(custom_filters.StateFilter(bot))
 bot.enable_saving_states()

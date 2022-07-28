@@ -23,7 +23,7 @@ class Basket(models.Model):
 
 class TempBask(models.Model):
     chat_id = models.CharField(max_length=100, null=True, blank=True)
-    qty = models.IntegerField(null=True, blank=True)
+    qty = models.IntegerField(default=1, null=True, blank=True)
     product_price = models.CharField(max_length=300, null=True, blank=True)
     product_name = models.CharField(max_length=255, null=True, blank=True)
 
