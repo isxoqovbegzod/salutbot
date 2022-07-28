@@ -5,10 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d3b39949-8b7b-4a99-9f31-e839b4d45cf9" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bots/user_state.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bots/management/commands/bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/bots/management/commands/bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bots/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/bots/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/db.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,7 +86,7 @@
       <updated>1658734500337</updated>
       <workItem from="1658734524479" duration="1555000" />
       <workItem from="1658740095454" duration="9284000" />
-      <workItem from="1658751641672" duration="22424000" />
+      <workItem from="1658751641672" duration="23200000" />
     </task>
     <servers />
   </component>

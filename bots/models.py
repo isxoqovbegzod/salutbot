@@ -7,7 +7,7 @@ class User(models.Model):
     locations = models.CharField(max_length=300, null=True, blank=True)
     choice_price_type = models.CharField(max_length=100, null=True, blank=True)
     username = models.CharField(max_length=255, null=True, blank=True)
-    qty = models.CharField(max_length=255, null=True, blank=True)
+    qty = models.CharField(max_length=255, default=1, null=True, blank=True)
     product_price = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self) -> str:
@@ -34,6 +34,7 @@ class ProductSubCategoryDetail(models.Model):
 
 
 class ProductSubCategory(models.Model):
+    product_categoty = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, null=True, blank=True)
     category_image = models.ImageField(upload_to='image/cat_image')
     product_sub_cat = models.ManyToManyField(ProductSubCategoryDetail)
 
