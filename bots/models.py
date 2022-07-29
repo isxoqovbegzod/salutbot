@@ -60,7 +60,7 @@ class ProductSubCategory(models.Model):
 
 
 class Settings(models.Model):
-    toll_price = models.CharField(max_length=100)
+    toll_price = models.IntegerField()
 
     def __str__(self) -> str:
-        return self.toll_price
+        return 'toll_price'

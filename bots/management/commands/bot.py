@@ -1,4 +1,7 @@
+from audioop import tomono
+
 import telebot
+from django.db.models import Count, Sum
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telebot import TeleBot
 from telebot import custom_filters
@@ -6,7 +9,7 @@ from telebot import custom_filters
 from bots.user_state import UserState, gen_markup, basket_product
 from django.core.management.base import BaseCommand
 from bots.views import models_method
-from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryDetail, User, TempBask, Basket
+from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryDetail, User, TempBask, Basket, Settings
 from bots.views import choice_sub_categoty
 
 # Объявление переменной бота
@@ -158,16 +161,17 @@ def callback_query(call):
                 if i == '\n':
                     break
             res = len(ds) - 2
-            olma = a[6:res]
-            print(olma)
-            user = ProductSubCategoryDetail.objects.filter(sub_categoty_name=olma).values('sub_categoty_name',
-                                                                                          'product_qty',
-                                                                                          'product_price').get()
-            print(user)
+            product_name = a[6:res]
+
+            user = ProductSubCategoryDetail.objects.filter(sub_categoty_name=product_name).values('sub_categoty_name',
+                                                                                                  'product_qty',
+                                                                                                  'product_price').get()
+
             user_tempbask = TempBask(chat_id=call.from_user.id, product_name=user['sub_categoty_name'],
                                      product_price=user['product_price'], qty=user['product_qty'])
-
             user_tempbask.save()
+            product_qty = TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(count=Count('qty')).get()
+            print(product_qty['count'] + 1, 'user_tempbask')
             bot.answer_callback_query(call.id, f"{1} ta")
         elif call.data == '📥 Savatga qo\'shish':
             basket(call)
@@ -192,8 +196,9 @@ def callback_query(call):
                                  product_price=user['product_price'], qty=user['product_qty'])
 
         user_tempbask.save()
-        bot.answer_callback_query(call.id, f"{1} ta")
+        bot.answer_callback_query(call.id, f"{2} ta")
         print('call   hatolik')
+
 
 @bot.message_handler(commands=['📥 Savatga qo\'shish'])
 def basket(message):
@@ -248,18 +253,27 @@ def basket(message):
 @bot.message_handler(commands=['📥 Savat'])
 def basket_detail(message):
     try:
-        basket_produnct = Basket.objects.filter(chat_id=message.from_user.id).values('qty', 'product_price',
-                                                                                     'product_name')
-        print(basket_produnct, '=======')
-        price = 0
-        text = 'Savatda: '
-        for i in basket_produnct:
-            text += f" \n🔹✖️Mahsulot nomi: {i['product_name']}\n🔹✖️Price: {i['product_price']}\n🔹✖️Soni: {i['qty']}\n\n"
-            price += float(i['product_price'])
+        basket_produnct = Basket.objects.filter(chat_id=message.from_user.id).values('product_name').annotate(
+            count=Count('product_name'), all_price=Sum('product_price'))
 
+        print(basket_produnct, '++++++++++++++++++++++++')
+        price_all = []
+        for re in basket_produnct:
+            price_all.append(re['all_price'])
+
+        text = 'Savatda: '
+
+        for i in basket_produnct:
+            text += f"\n{i['count']} ✖ {i['product_name']}"
+
+        toll_price = Settings.objects.all().values('toll_price').get()
+        sum_price = sum(price_all) + int(toll_price['toll_price'])
+        print(sum_price)
+        text += f'\nYetkazib berish: {toll_price["toll_price"]} \nJami: {sum_price} '
         bot.send_message(message.from_user.id, text)
     except:
-        print('hatioliv basket_detail')
+        print('hatolik basket_detail')
+
 
 bot.add_custom_filter(custom_filters.StateFilter(bot))
 bot.enable_saving_states()
