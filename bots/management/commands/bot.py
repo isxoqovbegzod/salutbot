@@ -176,9 +176,33 @@ def callback_query(call):
             bot.answer_callback_query(call.id, f"{qty_count} ta")
         elif call.data == '📥 Savatga qo\'shish':
             basket(call)
-            bot.answer_callback_query(call.id, "Qo'shildi ")
+            bot.answer_callback_query(call.id, "Qo'shildi !")
             TempBask.objects.filter(chat_id=call.from_user.id).delete()
+        elif call.data == 'subtract':
+            a = call.message.caption
+            ds = ''
+            for i in a:
+                ds += '1'
+                if i == '\n':
+                    break
+            res = len(ds) - 2
+            product_name = a[6:res]
+
+            # product_qty = TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(
+            #     count=Count('qty')).get()
+
+            if product_qty:= TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(
+                count=Count('qty')).get():
+                model_tempbask = TempBask.objects.filter(chat_id=call.from_user.id).filter(
+                    product_name=product_name).first().delete()
+                qty_count = product_qty['count'] - 1
+
+                bot.answer_callback_query(call.id, f"{qty_count } ta")
+            else:
+                bot.answer_callback_query(call.id, "0 ta")
+
     except:
+        bot.answer_callback_query(call.id, "0 ta")
         print('call   hatolik')
         print('call   hatolik')
 
@@ -226,6 +250,7 @@ def basket(message):
         #                        product_price=price_product_sum, qty=len_qty)
         #     user_basc.save()
     except:
+        bot.answer_callback_query(message.from_user.id, "Qo'shilmagan")
         print('📥 Savatga qo\'shish hatolik')
     #     txt += f'🔹<b>{i["product"]}</b>\n' \
     #            f'{i["count"]} x {i["price"]} = {int(i["price"]) * int(i["count"]):,} \n\n'

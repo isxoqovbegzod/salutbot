@@ -25,7 +25,7 @@ def gen_markup(message=None):
             qty_count = product_qty['count'] + 1
             print(qty_count, ' gen_markup()')
             markup.add(InlineKeyboardButton("-", callback_data="subtract"),
-                       InlineKeyboardButton(f"{'<>'}", callback_data="qty_1"),
+                       InlineKeyboardButton("👈👉", callback_data="qty_1"),
                        InlineKeyboardButton("+", callback_data="add"),
                        InlineKeyboardButton("📥 Savatga qo\'shish", callback_data="📥 Savatga qo\'shish"))
             print('dsaddadsadasdasdsa')
@@ -42,7 +42,7 @@ def gen_markup(message=None):
         markup = InlineKeyboardMarkup()
         markup.row_width = 3
         markup.add(InlineKeyboardButton("-", callback_data="subtract"),
-                   InlineKeyboardButton(f"{'<>'}", callback_data="qty_1"),
+                   InlineKeyboardButton("👈👉", callback_data="qty_1"),
                    InlineKeyboardButton("+", callback_data="add"),
                    InlineKeyboardButton("📥 Savatga qo\'shish", callback_data="📥 Savatga qo\'shish"))
         return markup
