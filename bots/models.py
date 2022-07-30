@@ -62,5 +62,5 @@ class ProductSubCategory(models.Model):
 class Settings(models.Model):
     toll_price = models.IntegerField()
 
-    def __str__(self) -> str:
+    def __str__(self):
         return 'toll_price'

@@ -1,14 +1,10 @@
-from audioop import tomono
-
-import telebot
-from django.db.models import Count, Sum, Q
+from django.db.models import Count
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telebot import TeleBot
 from telebot import custom_filters
 
 from bots.user_state import UserState, gen_markup, basket_product
 from django.core.management.base import BaseCommand
-from bots.views import models_method
 from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryDetail, User, TempBask, Basket, Settings
 from bots.views import choice_sub_categoty
 

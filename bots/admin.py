@@ -4,3 +4,5 @@ from .models import ProductSubCategory, ProductCategory, ProductSubCategoryDetai
 admin.site.register([ProductSubCategory, ProductCategory, ProductSubCategoryDetail, Settings, User])
 admin.site.register([Basket, TempBask])
 
+
+
