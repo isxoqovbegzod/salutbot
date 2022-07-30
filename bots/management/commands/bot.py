@@ -1,7 +1,7 @@
 from audioop import tomono
 
 import telebot
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telebot import TeleBot
 from telebot import custom_filters
@@ -162,41 +162,24 @@ def callback_query(call):
                     break
             res = len(ds) - 2
             product_name = a[6:res]
-
             user = ProductSubCategoryDetail.objects.filter(sub_categoty_name=product_name).values('sub_categoty_name',
                                                                                                   'product_qty',
                                                                                                   'product_price').get()
-
             user_tempbask = TempBask(chat_id=call.from_user.id, product_name=user['sub_categoty_name'],
                                      product_price=user['product_price'], qty=user['product_qty'])
             user_tempbask.save()
-            product_qty = TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(count=Count('qty')).get()
-            print(product_qty['count'] + 1, 'user_tempbask')
-            bot.answer_callback_query(call.id, f"{1} ta")
+            product_qty = TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(
+                count=Count('qty')).get()
+            print(product_qty)
+            qty_count = product_qty['count']
+
+            bot.answer_callback_query(call.id, f"{qty_count} ta")
         elif call.data == '📥 Savatga qo\'shish':
             basket(call)
             bot.answer_callback_query(call.id, "Qo'shildi ")
             TempBask.objects.filter(chat_id=call.from_user.id).delete()
     except:
         print('call   hatolik')
-        a = call.message.caption
-        ds = ''
-        for i in a:
-            ds += '1'
-            if i == '\n':
-                break
-        res = len(ds) - 2
-        olma = a[6:res]
-        print(olma)
-        user = ProductSubCategoryDetail.objects.filter(sub_categoty_name=olma).values('sub_categoty_name',
-                                                                                      'product_qty',
-                                                                                      'product_price').get()
-        print(user)
-        user_tempbask = TempBask(chat_id=call.from_user.id, product_name=user['sub_categoty_name'],
-                                 product_price=user['product_price'], qty=user['product_qty'])
-
-        user_tempbask.save()
-        bot.answer_callback_query(call.id, f"{2} ta")
         print('call   hatolik')
 
 
@@ -204,21 +187,44 @@ def callback_query(call):
 def basket(message):
     try:
         user_product_data = TempBask.objects.filter(chat_id=message.from_user.id).values('product_name',
-                                                                                         'product_price', 'qty')
+                                                                                         'product_price').annotate(
+            count=Count('product_name'))
 
-        # res = int(user_product_data['product_price']) * len(user_product_data['qty'])
-        # print(res)
         res = []
         for i in user_product_data:
             res.append(i)
 
-        len_qty = len(res)
-        print(len_qty, 'basket len_qty')
-        price_product_sum = float(res[0]['product_price']) * len_qty
-        user_basc = Basket(chat_id=message.from_user.id, product_name=res[0]['product_name'],
-                           product_price=price_product_sum, qty=len_qty)
-        user_basc.save()
-        print(res, 'resresrsersersres')
+        print(res, 'sasssasa11')
+
+        osss = []
+        if res_product := Basket.objects.filter(chat_id=message.from_user.id).filter(
+                product_name=res[0]['product_name']).all():
+            osss = res_product.values('qty').get()
+            res_product.delete()
+            result = osss['qty'] + res[0]['count']
+            reult_price = result * float(res[0]['product_price'])
+            user_product = Basket(chat_id=message.from_user.id, qty=result,
+                                  product_price=reult_price, product_name=res[0]['product_name'])
+            user_product.save()
+
+        else:
+            print('user_product save')
+            result_price = res[0]['count'] * float(res[0]['product_price'])
+            user_product = Basket(chat_id=message.from_user.id, qty=res[0]['count'],
+                                  product_price=result_price, product_name=res[0]['product_name'])
+            user_product.save()
+            print('user_product save 1')
+        # len_qty = len(res)
+        # print(len_qty, 'basket len_qty')
+        # price_product_sum = float(res[0]['product_price']) * len_qty
+        # print(price_product_sum, 'price sum')
+        #
+        # if res := Basket.objects.filter(chat_id=message.from_user.id).filter(product_name=res[0]['product_name']):
+        #     print('borrew')
+        # else:
+        #     user_basc = Basket(chat_id=message.from_user.id, product_name=res[0]['product_name'],
+        #                        product_price=price_product_sum, qty=len_qty)
+        #     user_basc.save()
     except:
         print('📥 Savatga qo\'shish hatolik')
     #     txt += f'🔹<b>{i["product"]}</b>\n' \
@@ -253,24 +259,29 @@ def basket(message):
 @bot.message_handler(commands=['📥 Savat'])
 def basket_detail(message):
     try:
-        basket_produnct = Basket.objects.filter(chat_id=message.from_user.id).values('product_name').annotate(
-            count=Count('product_name'), all_price=Sum('product_price'))
+        filer_count_product = Basket.objects.filter(chat_id=message.from_user.id).values('product_name', 'qty',
+                                                                                         'product_price')
+        print(filer_count_product, '++++++++++++++++++++++++')
 
-        print(basket_produnct, '++++++++++++++++++++++++')
-        price_all = []
-        for re in basket_produnct:
-            price_all.append(re['all_price'])
+        toll_price = Settings.objects.values('toll_price').get()
+        # print(type(toll_price['toll_price']), 'toll_price')
+        base = []
+        price = 0
+        for res in filer_count_product:
+            base.append(res)
+            price += float(res['product_price'])
 
-        text = 'Savatda: '
+        sum_price = price + toll_price['toll_price']
 
-        for i in basket_produnct:
-            text += f"\n{i['count']} ✖ {i['product_name']}"
+        if filer_count_product:
+            text = 'Savatda: '
+            for i in base:
+                text += f"\n{i['qty']} ✖ {i['product_name']}"
 
-        toll_price = Settings.objects.all().values('toll_price').get()
-        sum_price = sum(price_all) + int(toll_price['toll_price'])
-        print(sum_price)
-        text += f'\nYetkazib berish: {toll_price["toll_price"]} \nJami: {sum_price} '
-        bot.send_message(message.from_user.id, text)
+            text += f'\nYetkazib berish: {toll_price["toll_price"]} \nJami: {sum_price} '
+            bot.send_message(message.from_user.id, text)
+        else:
+            bot.send_message(message.from_user.id, "savatda hech nima yo'q")
     except:
         print('hatolik basket_detail')
 
