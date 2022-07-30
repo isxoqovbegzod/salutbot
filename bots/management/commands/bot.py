@@ -3,7 +3,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 from telebot import TeleBot
 from telebot import custom_filters
 
-from bots.user_state import UserState, gen_markup, basket_product
+from bots.user_state import UserState, gen_markup, get_order_product
 from django.core.management.base import BaseCommand
 from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryDetail, User, TempBask, Basket, Settings
 from bots.views import choice_sub_categoty
@@ -41,7 +41,8 @@ def user_name(message):
     user_id = message.from_user.id
     try:
         if message.text == '📥 Savat':
-            basket_detail(message)
+            print("sasassssssssssssssssssss----------------->>>>>>>>>>>>>>>> 1")
+            return basket_detail(message)
         user = User.objects.filter(chat_id=user_id).exists()
         if not user:
             User.objects.create(chat_id=user_id, username=message.text)
@@ -68,10 +69,10 @@ def user_name(message):
 def sub_category(message):
     print(message.text, 'test')
     try:
-        if message.text == '⬅️ orqga':
+        if message.text == '⬅️orqga':
             return user_name(message)
         elif message.text == '📥 Savat':
-            print("sasassssssssssssssssssss----------------->>>>>>>>>>>>>>>>")
+            print("sasassssssssssssssssssss----------------->>>>>>>>>>>>>>>> 2 ")
             return basket_detail(message)
         markup = ReplyKeyboardMarkup(True, row_width=2)
 
@@ -114,10 +115,10 @@ def sub_category(message):
 def sub_category_detail(message):
     try:
         if message.text == '⬅️ orqga':
-            message.text = 'hello'
             return sub_category(message)
         if message.text == '📥 Savat':
-            basket_detail(message)
+            print("sasassssssssssssssssssss----------------->>>>>>>>>>>>>>>> 1")
+            return basket_detail(message)
 
         markup = ReplyKeyboardMarkup(True, row_width=2)
         models = ProductSubCategoryDetail.objects.filter(sub_categoty_name=message.text).values('sub_categoty_name',
@@ -142,8 +143,25 @@ def sub_category_detail(message):
         photo.close()
     except:
         print('hatolik detal')
-    # finally:
-    #     photo.close()
+
+
+@bot.message_handler(content_types=['location'])
+def handle_location(message):
+    print(message)
+    print('666666666666666666')
+    # bot.reply_to(text="{0}, {1}".format(message.location.latitude, message.location.longitude), message=message)
+#
+#
+# @bot.message_handler(commands=["send_location"])
+# def sendlocation(message):
+#     print(message.location)
+
+
+def user_data(message):
+    keyboard = ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_geo = KeyboardButton(text="Отправить местоположение", request_location=True)
+    keyboard.add(button_geo)
+    bot.send_message(message.from_user.id, '📍 Geolocatsiyani yuboring', reply_markup=keyboard)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -187,20 +205,28 @@ def callback_query(call):
             # product_qty = TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(
             #     count=Count('qty')).get()
 
-            if product_qty:= TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(
-                count=Count('qty')).get():
+            if product_qty := TempBask.objects.filter(chat_id=call.from_user.id).values('qty').annotate(
+                    count=Count('qty')).get():
                 model_tempbask = TempBask.objects.filter(chat_id=call.from_user.id).filter(
                     product_name=product_name).first().delete()
                 qty_count = product_qty['count'] - 1
 
-                bot.answer_callback_query(call.id, f"{qty_count } ta")
+                bot.answer_callback_query(call.id, f"{qty_count} ta")
             else:
                 bot.answer_callback_query(call.id, "0 ta")
+        elif call.data == 'order':
+            user_data(call)
+
 
     except:
         bot.answer_callback_query(call.id, "0 ta")
         print('call   hatolik')
         print('call   hatolik')
+
+
+def gen_markup_remove(message):
+    rkm_remove = ReplyKeyboardRemove()
+    bot.send_message(message.from_user.id, 'Bo\'limni tanlang', reply_markup=rkm_remove)
 
 
 @bot.message_handler(commands=['📥 Savatga qo\'shish'])
@@ -226,14 +252,14 @@ def basket(message):
             user_product = Basket(chat_id=message.from_user.id, qty=result,
                                   product_price=reult_price, product_name=res[0]['product_name'])
             user_product.save()
-
+            print('olma1111111')
         else:
             print('user_product save')
             result_price = res[0]['count'] * float(res[0]['product_price'])
             user_product = Basket(chat_id=message.from_user.id, qty=res[0]['count'],
                                   product_price=result_price, product_name=res[0]['product_name'])
             user_product.save()
-            print('user_product save 1')
+
         # len_qty = len(res)
         # print(len_qty, 'basket len_qty')
         # price_product_sum = float(res[0]['product_price']) * len_qty
@@ -300,7 +326,7 @@ def basket_detail(message):
                 text += f"\n{i['qty']} ✖ {i['product_name']}"
 
             text += f'\nYetkazib berish: {toll_price["toll_price"]} \nJami: {sum_price} '
-            bot.send_message(message.from_user.id, text)
+            bot.send_message(message.from_user.id, text, reply_markup=get_order_product(message))
         else:
             bot.send_message(message.from_user.id, "savatda hech nima yo'q")
     except:

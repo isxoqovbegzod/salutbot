@@ -1,6 +1,6 @@
 from django.db.models import Count
 from telebot.handler_backends import StatesGroup
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from bots.models import User, TempBask
 
 
@@ -48,5 +48,26 @@ def gen_markup(message=None):
         return markup
 
 
-def basket_product(message):
-    pass
+def get_order_product(message):
+    try:
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 2
+        markup.add(InlineKeyboardButton("⬅️orqga", callback_data="⬅️orqga"),
+                   InlineKeyboardButton("🚖 Buyurtma berish", callback_data="order"),
+                   InlineKeyboardButton("🗑 Savatni tozalash", callback_data="basket_remove"))
+        print('get_order_product all()')
+        return markup
+    except:
+        print('hatolik get_order_product ')
+
+
+
+
+
+
+
+
+
+
+
+
