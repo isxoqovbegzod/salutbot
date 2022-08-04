@@ -3,10 +3,11 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 from telebot import TeleBot
 from telebot import custom_filters
 
-from bots.user_state import UserState, gen_markup, get_order_product
+from bots.user_state import UserState, gen_markup, get_order_product, confirm
 from django.core.management.base import BaseCommand
 from bots.models import ProductCategory, ProductSubCategory, ProductSubCategoryDetail, User, TempBask, Basket, Settings
 from bots.views import choice_sub_categoty
+from geopy.geocoders import Nominatim
 
 # Объявление переменной бота
 bot = TeleBot(token='5295753057:AAGVOAPzjyxlOcqFrj45CpWmY4aMfGndsbs', threaded=False)
@@ -147,21 +148,95 @@ def sub_category_detail(message):
 
 @bot.message_handler(content_types=['location'])
 def handle_location(message):
-    print(message)
+    geolocator = Nominatim(user_agent="bots")
+    location = geolocator.reverse("41.286981, 69.228399")
+    print(location)
+
+    locations = {'lat': message.location.latitude, 'long': message.location.longitude}
+    user = User.objects.get(chat_id=message.from_user.id)
+    user.locations = locations
+    user.save()
+    user_phone(message)
     print('666666666666666666')
-    # bot.reply_to(text="{0}, {1}".format(message.location.latitude, message.location.longitude), message=message)
-#
-#
-# @bot.message_handler(commands=["send_location"])
-# def sendlocation(message):
-#     print(message.location)
 
 
-def user_data(message):
+@bot.message_handler(content_types=['contact'])
+def handler_phone(message):
+    print(message.contact.phone_number)
+    phone = message.contact.phone_number
+    user = User.objects.get(chat_id=message.from_user.id)
+    user.phone_number = phone
+    user.save()
+    product_approval(message)
+
+
+def product_approval(message):
+    try:
+        filer_count_product = Basket.objects.filter(chat_id=message.from_user.id).values('product_name', 'qty',
+                                                                                         'product_price')
+        print(filer_count_product, '++++++++++++++++++++++++')
+        toll_price = Settings.objects.values('toll_price').get()
+        base = []
+        price = 0
+        for res in filer_count_product:
+            base.append(res)
+            price += float(res['product_price'])
+
+        sum_price = price + toll_price['toll_price']
+
+        if filer_count_product:
+            text = 'Savatda: '
+            for i in base:
+                text += f"\n{i['qty']} ✖ {i['product_name']}"
+
+            text += f'\nYetkazib berish: {toll_price["toll_price"]} \nJami: {sum_price} '
+            bot.send_message(message.from_user.id, text, reply_markup=confirm(message))
+        else:
+            bot.send_message(message.from_user.id, "savatda hech nima yo'q")
+
+    except:
+        print('hatolik product_approval')
+
+
+def user_locations(message):
     keyboard = ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_geo = KeyboardButton(text="Отправить местоположение", request_location=True)
+    button_geo = KeyboardButton(text="📍 Geolocatsiyani yuboring", request_location=True)
     keyboard.add(button_geo)
-    bot.send_message(message.from_user.id, '📍 Geolocatsiyani yuboring', reply_markup=keyboard)
+    bot.send_message(message.from_user.id, '📍 Geolocatsiyani yuborish', reply_markup=keyboard)
+
+
+def user_phone(message):
+    keyboard = ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_phone = KeyboardButton(text='📞 Telefon raqam yuboring', request_contact=True)
+    keyboard.add(button_phone)
+    bot.send_message(message.from_user.id, '📞 Telefon raqam yuboring', reply_markup=keyboard)
+
+
+# def user_order(message):
+#     try:
+#         filer_count_product = Basket.objects.filter(chat_id=message.from_user.id).values('produbots_basketct_name',
+#                                                                                          'qty',
+#                                                                                          'product_price', 'id')
+#         print(filer_count_product, '++++++++++++++++++++++++')
+#         toll_price = Settings.objects.values('toll_price').get()
+#         base = []
+#         price = 0
+#         for res in filer_count_product:
+#             base.append(res)
+#             price += float(res['product_price'])
+#         sum_price = price + toll_price['toll_price']
+#
+#         if filer_count_product:
+#             text = f'Sizning id raqamingiz: {base[0]["id"]}\nSavatda: '
+#             for i in base:
+#                 text += f"\n{i['qty']} ✖ {i['product_name']}"
+#
+#             text += f'\nYetkazib berish: {toll_price["toll_price"]} \nJami: {sum_price} '
+#             bot.send_message(message.from_user.id, text, reply_markup=confirm(message))
+#         else:
+#             bot.send_message(message.from_user.id, "savatda hech nima yo'q")
+#     except:
+#         print('hatolik basket_detail')
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -215,7 +290,15 @@ def callback_query(call):
             else:
                 bot.answer_callback_query(call.id, "0 ta")
         elif call.data == 'order':
-            user_data(call)
+            user_locations(call)
+        elif call.data == 'no':
+            print('no  functions')
+            bot.send_message(call.message.from_user.id, UserState.sub_category)
+            user = Basket.objects.get(call.message.from_user.id)
+            user.delete()
+        elif call.data == 'ok':
+            pass
+
 
 
     except:
@@ -309,9 +392,7 @@ def basket_detail(message):
         filer_count_product = Basket.objects.filter(chat_id=message.from_user.id).values('product_name', 'qty',
                                                                                          'product_price')
         print(filer_count_product, '++++++++++++++++++++++++')
-
         toll_price = Settings.objects.values('toll_price').get()
-        # print(type(toll_price['toll_price']), 'toll_price')
         base = []
         price = 0
         for res in filer_count_product:

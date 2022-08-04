@@ -61,6 +61,23 @@ def get_order_product(message):
         print('hatolik get_order_product ')
 
 
+def confirm(message):
+    """confirm - tasdiqlash """
+    try:
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 2
+        markup.add(InlineKeyboardButton('❌', callback_data='no'),
+                   InlineKeyboardButton('✅', callback_data='ok'),
+                   InlineKeyboardButton('Buyurtmani tasdiqlang', callback_data='Buyurtmani tasdiqlang'))
+
+        return markup
+    except:
+        print('hatolik confirm')
+
+
+
+
+
 
 
 
