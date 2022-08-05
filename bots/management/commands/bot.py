@@ -13,6 +13,7 @@ from geopy.geocoders import Nominatim
 bot = TeleBot(token='5536054627:AAGQan5uziLaZME577B3tX5ayeks7Q1fCLY', threaded=False)
 
 
+
 # Название класса обязательно - "Command"
 class Command(BaseCommand):
     # Используется как описание команды обычно
